@@ -33,6 +33,10 @@ def test_unknown_command(device):
     assert r["status"] == "ERROR"
     assert r["code"] == "UNKNOWN_COMMAND"
 
+def test_no_response_becomes_timeout(device):
+    with pytest.raises(TimeoutError):
+        device.command("NO_RESPONSE")
+
 @pytest.mark.parametrize("value", [0, 1, 50, 99, 100])
 def test_pwm_valid_boundaries(device, value):
     r = device.command(f"SET PWM {value}")
@@ -46,14 +50,18 @@ def test_pwm_invalid_boundaries(device, value):
     assert r["code"] == "INVALID_VALUE"
 
 @pytest.mark.parametrize("value", [15, 75, 98])
-def test_pwm__additional_valid_boundaries(device, value):
+def test_pwm_additional_valid_values(device, value):
     r = device.command(f"SET PWM {value}")
     assert r["status"] == "OK"
     assert r["pwm"] == value
 
-@pytest.mark.parametrize("value", [-101, -10, ])
-def test_pwm_additional_invalid_boundaries(device, value):
+@pytest.mark.parametrize("value", [-101, 10.5])
+def test_pwm_additional_invalid_values(device, value):
     r = device.command(f"SET PWM {value}")
     assert r["status"] == "ERROR"
     assert r["code"] == "INVALID_VALUE"
 
+def test_pwm_empty_value(device):
+    r = device.command("SET PWM ''")
+    assert r["status"] == "ERROR"
+    assert r["code"] == "INVALID_VALUE"
